@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Find your BCS membership</title>
+  <style>
+    :root {
+      --green: #C8D400;
+      --black: #000000;
+      --dark: #1a1a1a;
+      --mid: #555555;
+      --border: #d8d8d8;
+      --bg-light: #f5f5f5;
+      --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, Helvetica, sans-serif;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: var(--font);
+      background: #fff;
+      color: var(--dark);
+    }
+
+    /* ── Quiz wrapper ── */
+    .bcs-quiz {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 40px 24px 60px;
+    }
+
+    .bcs-quiz__heading {
+      font-size: 2rem;
+      font-weight: 800;
+      color: var(--black);
+      margin-bottom: 8px;
+      line-height: 1.2;
+    }
+
+    .bcs-quiz__intro {
+      font-size: 1rem;
+      color: var(--mid);
+      margin-bottom: 36px;
+      line-height: 1.5;
+    }
+
+    /* ── Progress bar ── */
+    .bcs-progress {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 36px;
+    }
+
+    .bcs-progress__step {
+      height: 4px;
+      flex: 1;
+      background: var(--border);
+      border-radius: 2px;
+      transition: background 0.3s;
+    }
+
+    .bcs-progress__step.is-done   { background: var(--black); }
+    .bcs-progress__step.is-active { background: var(--green); }
+
+    /* ── Question panel ── */
+    .bcs-question { display: none; }
+    .bcs-question.is-active { display: block; }
+
+    .bcs-question__label {
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--mid);
+      margin-bottom: 10px;
+    }
+
+    .bcs-question__text {
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: var(--black);
+      margin-bottom: 28px;
+      line-height: 1.3;
+    }
+
+    /* ── Options ── */
+    .bcs-options {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 28px;
+    }
+
+    .bcs-option {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      padding: 16px 18px;
+      border: 2px solid var(--border);
+      background: #fff;
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s;
+      border-radius: 2px;
+    }
+
+    .bcs-option:hover { border-color: var(--black); }
+
+    .bcs-option.is-selected {
+      border-color: var(--black);
+      background: var(--bg-light);
+    }
+
+    .bcs-option input[type="radio"] {
+      margin-top: 2px;
+      width: 18px;
+      height: 18px;
+      flex-shrink: 0;
+      accent-color: var(--black);
+      cursor: pointer;
+    }
+
+    .bcs-option__text {
+      font-size: 0.98rem;
+      color: var(--dark);
+      line-height: 1.45;
+    }
+
+    /* ── Error ── */
+    .bcs-error {
+      display: none;
+      font-size: 0.88rem;
+      color: #c0392b;
+      margin-bottom: 16px;
+    }
+
+    /* ── Buttons ── */
+    .bcs-nav {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+
+    .bcs-btn {
+      display: inline-block;
+      padding: 13px 28px;
+      font-family: var(--font);
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      border: 2px solid transparent;
+      border-radius: 2px;
+      text-decoration: none;
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
+      white-space: nowrap;
+    }
+
+    /* Black — primary action */
+    .bcs-btn--primary {
+      background: var(--black);
+      color: #fff;
+      border-color: var(--black);
+    }
+    .bcs-btn--primary:hover { background: #333; border-color: #333; }
+
+    /* Outlined — back / secondary */
+    .bcs-btn--outline {
+      background: transparent;
+      color: var(--dark);
+      border-color: var(--border);
+    }
+    .bcs-btn--outline:hover { border-color: var(--black); color: var(--black); }
+
+    /* Lime green — join CTA */
+    .bcs-btn--join {
+      background: var(--green);
+      color: var(--black);
+      border-color: var(--green);
+    }
+    .bcs-btn--join:hover { background: #b5c000; border-color: #b5c000; }
+
+    /* ── Result card ── */
+    .bcs-result { display: none; }
+    .bcs-result.is-active { display: block; }
+
+    .bcs-result__header {
+      background: var(--black);
+      color: #fff;
+      padding: 32px 32px 28px;
+    }
+
+    .bcs-result__tag {
+      display: inline-block;
+      background: var(--green);
+      color: var(--black);
+      font-size: 0.72rem;
+      font-weight: 800;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 4px 10px;
+      margin-bottom: 14px;
+    }
+
+    .bcs-result__title {
+      font-size: 1.9rem;
+      font-weight: 800;
+      margin-bottom: 12px;
+      line-height: 1.15;
+    }
+
+    .bcs-result__summary {
+      font-size: 1rem;
+      color: #ccc;
+      line-height: 1.55;
+    }
+
+    .bcs-result__body {
+      border: 2px solid var(--border);
+      border-top: none;
+      padding: 28px 32px 32px;
+    }
+
+    .bcs-result__meta {
+      display: flex;
+      gap: 40px;
+      flex-wrap: wrap;
+      margin-bottom: 28px;
+      padding-bottom: 24px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .bcs-meta-item__label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--mid);
+      margin-bottom: 4px;
+    }
+
+    .bcs-meta-item__value {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--black);
+    }
+
+    .bcs-result__actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 24px;
+    }
+
+    .bcs-result__note {
+      background: #f9f9eb;
+      border-left: 3px solid var(--green);
+      padding: 14px 18px;
+      font-size: 0.88rem;
+      color: #555;
+      line-height: 1.55;
+    }
+
+    .bcs-result__note strong { color: var(--dark); }
+
+    .bcs-restart {
+      margin-top: 24px;
+      font-size: 0.88rem;
+      color: var(--mid);
+    }
+
+    .bcs-restart button {
+      background: none;
+      border: none;
+      padding: 0;
+      font-family: var(--font);
+      font-size: 0.88rem;
+      color: var(--black);
+      text-decoration: underline;
+      cursor: pointer;
+    }
+
+    .bcs-restart button:hover { color: #555; }
+
+    /* ── Responsive ── */
+    @media (max-width: 560px) {
+      .bcs-quiz { padding: 28px 16px 48px; }
+      .bcs-quiz__heading { font-size: 1.5rem; }
+      .bcs-question__text { font-size: 1.15rem; }
+      .bcs-result__header,
+      .bcs-result__body { padding: 22px 20px; }
+      .bcs-result__title { font-size: 1.45rem; }
+      .bcs-result__meta { gap: 20px; }
+      .bcs-btn { padding: 12px 20px; font-size: 0.88rem; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="bcs-quiz" id="bcsQuiz">
+
+  <h2 class="bcs-quiz__heading">Find your BCS membership</h2>
+  <p class="bcs-quiz__intro">Answer a few questions to discover which BCS membership grade is right for you.</p>
+
+  <!-- Progress bar (3 steps max) -->
+  <div class="bcs-progress" id="bcsProgress" aria-hidden="true">
+    <div class="bcs-progress__step is-active" id="step-1"></div>
+    <div class="bcs-progress__step" id="step-2"></div>
+    <div class="bcs-progress__step" id="step-3"></div>
+  </div>
+
+  <!-- ══════════════════════════════════════════
+       QUESTION 1
+  ══════════════════════════════════════════ -->
+  <div class="bcs-question is-active" id="q1" role="group" aria-labelledby="q1-text">
+
+    <p class="bcs-question__label">Question 1</p>
+    <p class="bcs-question__text" id="q1-text">What best describes your current situation?</p>
+
+    <div class="bcs-options">
+
+      <label class="bcs-option">
+        <input type="radio" name="q1" value="student">
+        <span class="bcs-option__text">I'm currently studying an IT-related course, degree, or digital T Level</span>
+      </label>
+
+      <label class="bcs-option">
+        <input type="radio" name="q1" value="associate">
+        <span class="bcs-option__text">I'm an IT apprentice, trainee, or currently on a Skills Bootcamp</span>
+      </label>
+
+      <label class="bcs-option">
+        <input type="radio" name="q1" value="working">
+        <span class="bcs-option__text">I work or teach in computing and technology</span>
+      </label>
+
+      <label class="bcs-option">
+        <input type="radio" name="q1" value="affiliate">
+        <span class="bcs-option__text">I'm interested in IT but don't work in it professionally</span>
+      </label>
+
+      <label class="bcs-option">
+        <input type="radio" name="q1" value="retired">
+        <span class="bcs-option__text">I've retired or am leaving employment but want to stay connected to the IT profession</span>
+      </label>
+
+    </div>
+
+    <p class="bcs-error" id="err-q1" role="alert">Please select an answer to continue.</p>
+
+    <div class="bcs-nav">
+      <button class="bcs-btn bcs-btn--primary" onclick="handleQ1()">Next question →</button>
+    </div>
+
+  </div>
+
+  <!-- ══════════════════════════════════════════
+       QUESTION 2
+  ══════════════════════════════════════════ -->
+  <div class="bcs-question" id="q2" role="group" aria-labelledby="q2-text">
+
+    <p class="bcs-question__label">Question 2 of 3</p>
+    <p class="bcs-question__text" id="q2-text">How would you describe your level in the industry?</p>
+
+    <div class="bcs-options">
+
+      <label class="bcs-option">
+        <input type="radio" name="q2" value="early">
+        <span class="bcs-option__text">I'm in an early or mid-level role, building my skills and experience</span>
+      </label>
+
+      <label class="bcs-option">
+        <input type="radio" name="q2" value="experienced">
+        <span class="bcs-option__text">I'm an established practitioner with a strong professional track record</span>
+      </label>
+
+      <label class="bcs-option">
+        <input type="radio" name="q2" value="senior">
+        <span class="bcs-option__text">I'm a senior leader, director, or widely recognised expert in my field</span>
+      </label>
+
+    </div>
+
+    <p class="bcs-error" id="err-q2" role="alert">Please select an answer to continue.</p>
+
+    <div class="bcs-nav">
+      <button class="bcs-btn bcs-btn--outline" onclick="goBack(2)">← Back</button>
+      <button class="bcs-btn bcs-btn--primary" onclick="handleQ2()">Next question →</button>
+    </div>
+
+  </div>
+
+  <!-- ══════════════════════════════════════════
+       QUESTION 3
+  ══════════════════════════════════════════ -->
+  <div class="bcs-question" id="q3" role="group" aria-labelledby="q3-text">
+
+    <p class="bcs-question__label">Question 3 of 3</p>
+    <p class="bcs-question__text" id="q3-text">Which of these best describes your standing in the industry?</p>
+
+    <div class="bcs-options">
+
+      <label class="bcs-option">
+        <input type="radio" name="q3" value="fellow-a">
+        <span class="bcs-option__text">I'm seen as a leader or role model — I shape the direction of IT at an industry or organisational level</span>
+      </label>
+
+      <label class="bcs-option">
+        <input type="radio" name="q3" value="fellow-b">
+        <span class="bcs-option__text">I actively contribute to the profession through mentoring, speaking, policy work, or industry standards</span>
+      </label>
+
+      <label class="bcs-option">
+        <input type="radio" name="q3" value="professional">
+        <span class="bcs-option__text">I'm highly experienced but wouldn't yet describe myself as a recognised industry leader or role model</span>
+      </label>
+
+    </div>
+
+    <p class="bcs-error" id="err-q3" role="alert">Please select an answer to continue.</p>
+
+    <div class="bcs-nav">
+      <button class="bcs-btn bcs-btn--outline" onclick="goBack(3)">← Back</button>
+      <button class="bcs-btn bcs-btn--primary" onclick="handleQ3()">See my result →</button>
+    </div>
+
+  </div>
+
+  <!-- ══════════════════════════════════════════
+       RESULTS
+  ══════════════════════════════════════════ -->
+
+  <!-- Student -->
+  <div class="bcs-result" id="result-student">
+    <div class="bcs-result__header">
+      <span class="bcs-result__tag">Your membership match</span>
+      <h3 class="bcs-result__title">Student membership</h3>
+      <p class="bcs-result__summary">Connect with people working in your industry and access learning and employability resources designed to enrich your studies and help you build your career from day one.</p>
+    </div>
+    <div class="bcs-result__body">
+      <div class="bcs-result__meta">
+        <div>
+          <p class="bcs-meta-item__label">Criteria</p>
+          <p class="bcs-meta-item__value">Studying an IT-related course or digital T Level</p>
+        </div>
+        <div>
+          <p class="bcs-meta-item__label">Cost</p>
+          <p class="bcs-meta-item__value">£20–£30 per year</p>
+        </div>
+      </div>
+      <div class="bcs-result__actions">
+        <a href="https://www.bcs.org/membership-and-registrations/become-a-member/student-membership/" class="bcs-btn bcs-btn--join" target="_blank" rel="noopener">Join today →</a>
+        <a href="https://www.bcs.org/membership-and-registrations/become-a-member/student-membership/" class="bcs-btn bcs-btn--outline" target="_blank" rel="noopener">Find out more</a>
+      </div>
+      <div class="bcs-result__note">
+        <strong>Full course discount:</strong> Become a Student member for the full duration of your course (up to four years) for just £30. If you live in a low or lower income country, international reduced rates may also apply.
+      </div>
+    </div>
+    <p class="bcs-restart">Not quite right? <button onclick="restartQuiz()">Retake the quiz</button></p>
+  </div>
+
+  <!-- Associate -->
+  <div class="bcs-result" id="result-associate">
+    <div class="bcs-result__header">
+      <span class="bcs-result__tag">Your membership match</span>
+      <h3 class="bcs-result__title">Associate membership (AMBCS)</h3>
+      <p class="bcs-result__summary">Built for IT apprentices and trainees, Associate membership lays the foundations for a professional career in technology with the practical support, industry contacts, and guidance you need.</p>
+    </div>
+    <div class="bcs-result__body">
+      <div class="bcs-result__meta">
+        <div>
+          <p class="bcs-meta-item__label">Criteria</p>
+          <p class="bcs-meta-item__value">IT apprentice, trainee, or on a Skills Bootcamp</p>
+        </div>
+        <div>
+          <p class="bcs-meta-item__label">Cost</p>
+          <p class="bcs-meta-item__value">£32 per year</p>
+        </div>
+      </div>
+      <div class="bcs-result__actions">
+        <a href="https://www.bcs.org/membership-and-registrations/become-a-member/associate-membership/" class="bcs-btn bcs-btn--join" target="_blank" rel="noopener">Join today →</a>
+        <a href="https://www.bcs.org/membership-and-registrations/become-a-member/associate-membership/" class="bcs-btn bcs-btn--outline" target="_blank" rel="noopener">Find out more</a>
+      </div>
+      <div class="bcs-result__note">
+        <strong>Moving up?</strong> When you complete your training, you can upgrade to Professional MBCS membership with early careers phased pricing: Year 1 £25 · Year 2 £50 · Year 3 £92.
+      </div>
+    </div>
+    <p class="bcs-restart">Not quite right? <button onclick="restartQuiz()">Retake the quiz</button></p>
+  </div>
+
+  <!-- Professional -->
+  <div class="bcs-result" id="result-professional">
+    <div class="bcs-result__header">
+      <span class="bcs-result__tag">Your membership match</span>
+      <h3 class="bcs-result__title">Professional membership (MBCS)</h3>
+      <p class="bcs-result__summary">The most widely recognised IT membership in the UK. Invest in your professional development, grow your network, and be part of a global community of over 70,000 tech professionals.</p>
+    </div>
+    <div class="bcs-result__body">
+      <div class="bcs-result__meta">
+        <div>
+          <p class="bcs-meta-item__label">Criteria</p>
+          <p class="bcs-meta-item__value">Working or teaching in computing and technology</p>
+        </div>
+        <div>
+          <p class="bcs-meta-item__label">Cost</p>
+          <p class="bcs-meta-item__value">£187 per year</p>
+        </div>
+      </div>
+      <div class="bcs-result__actions">
+        <a href="https://www.bcs.org/membership-and-registrations/become-a-member/professional-membership/" class="bcs-btn bcs-btn--join" target="_blank" rel="noopener">Join today →</a>
+        <a href="https://www.bcs.org/membership-and-registrations/become-a-member/professional-membership/" class="bcs-btn bcs-btn--outline" target="_blank" rel="noopener">Find out more</a>
+      </div>
+      <div class="bcs-result__note">
+        <strong>Ways to save:</strong> Pay by annual Direct Debit to save 2.5%. If you live in a low or lower income country, you may qualify for a 50% international discount. UK taxpayers may also be eligible to claim tax relief on their subscription fee.
+      </div>
+    </div>
+    <p class="bcs-restart">Not quite right? <button onclick="restartQuiz()">Retake the quiz</button></p>
+  </div>
+
+  <!-- Fellow -->
+  <div class="bcs-result" id="result-fellow">
+    <div class="bcs-result__header">
+      <span class="bcs-result__tag">Your membership match</span>
+      <h3 class="bcs-result__title">Fellowship (FBCS)</h3>
+      <p class="bcs-result__summary">BCS Fellowship brings together the most influential professionals in the digital industry. Connect with leaders who share your passion for technology, your technical expertise, your business acumen, and your commitment to ethical practice.</p>
+    </div>
+    <div class="bcs-result__body">
+      <div class="bcs-result__meta">
+        <div>
+          <p class="bcs-meta-item__label">Criteria</p>
+          <p class="bcs-meta-item__value">IT leader or widely recognised role model in your field</p>
+        </div>
+        <div>
+          <p class="bcs-meta-item__label">Cost</p>
+          <p class="bcs-meta-item__value">£252 per year + £210 one-off application fee</p>
+        </div>
+      </div>
+      <div class="bcs-result__actions">
+        <a href="https://www.bcs.org/membership-and-registrations/become-a-member/bcs-fellowship/" class="bcs-btn bcs-btn--join" target="_blank" rel="noopener">Apply for Fellowship →</a>
+        <a href="https://www.bcs.org/membership-and-registrations/become-a-member/bcs-fellowship/" class="bcs-btn bcs-btn--outline" target="_blank" rel="noopener">Find out more</a>
+      </div>
+      <div class="bcs-result__note">
+        <strong>International rates:</strong> If you live in a low or lower income country, you may qualify for 50% off both the annual subscription and the Fellowship assessment route application fee.
+      </div>
+    </div>
+    <p class="bcs-restart">Not quite right? <button onclick="restartQuiz()">Retake the quiz</button></p>
+  </div>
+
+  <!-- Affiliate -->
+  <div class="bcs-result" id="result-affiliate">
+    <div class="bcs-result__header">
+      <span class="bcs-result__tag">Your membership match</span>
+      <h3 class="bcs-result__title">Affiliate membership</h3>
+      <p class="bcs-result__summary">Got a passion for IT but no professional connection to the industry? Get closer to technology and the people who make it happen as a BCS Affiliate — no formal qualifications required.</p>
+    </div>
+    <div class="bcs-result__body">
+      <div class="bcs-result__meta">
+        <div>
+          <p class="bcs-meta-item__label">Criteria</p>
+          <p class="bcs-meta-item__value">No formal requirements — just a passion for technology</p>
+        </div>
+        <div>
+          <p class="bcs-meta-item__label">Cost</p>
+          <p class="bcs-meta-item__value">£104 per year</p>
+        </div>
+      </div>
+      <div class="bcs-result__actions">
+        <a href="https://www.bcs.org/membership-and-registrations/become-a-member/affiliate-membership/" class="bcs-btn bcs-btn--join" target="_blank" rel="noopener">Join today →</a>
+        <a href="https://www.bcs.org/membership-and-registrations/become-a-member/affiliate-membership/" class="bcs-btn bcs-btn--outline" target="_blank" rel="noopener">Find out more</a>
+      </div>
+    </div>
+    <p class="bcs-restart">Not quite right? <button onclick="restartQuiz()">Retake the quiz</button></p>
+  </div>
+
+  <!-- Retired -->
+  <div class="bcs-result" id="result-retired">
+    <div class="bcs-result__header">
+      <span class="bcs-result__tag">Your membership match</span>
+      <h3 class="bcs-result__title">Retired member subscription</h3>
+      <p class="bcs-result__summary">Just because you're leaving — or have left — employment doesn't mean you have to leave the profession. Stay connected, share your expertise, and continue contributing to the IT community at a reduced rate.</p>
+    </div>
+    <div class="bcs-result__body">
+      <div class="bcs-result__meta">
+        <div>
+          <p class="bcs-meta-item__label">Criteria</p>
+          <p class="bcs-meta-item__value">Retired or leaving employment, still active in the profession</p>
+        </div>
+        <div>
+          <p class="bcs-meta-item__label">Cost</p>
+          <p class="bcs-meta-item__value">£52 per year</p>
+        </div>
+      </div>
+      <div class="bcs-result__actions">
+        <a href="https://www.bcs.org/membership-and-registrations/become-a-member/membership-reduced-fees/retired-member-subscription/" class="bcs-btn bcs-btn--join" target="_blank" rel="noopener">Apply now →</a>
+        <a href="https://www.bcs.org/membership-and-registrations/become-a-member/membership-reduced-fees/retired-member-subscription/" class="bcs-btn bcs-btn--outline" target="_blank" rel="noopener">Find out more</a>
+      </div>
+      <div class="bcs-result__note">
+        <strong>Please note:</strong> Your eligibility will be reviewed by BCS. If you hold professional registrations (CITP, CEng, IEng, FEDIP, RITTech), additional fees apply to maintain these alongside your retired subscription.
+      </div>
+    </div>
+    <p class="bcs-restart">Not quite right? <button onclick="restartQuiz()">Retake the quiz</button></p>
+  </div>
+
+</div><!-- /.bcs-quiz -->
+
+<script>
+  /* ── Highlight selected option ── */
+  document.querySelectorAll('.bcs-option input[type="radio"]').forEach(function(radio) {
+    radio.addEventListener('change', function() {
+      var name = this.name;
+      document.querySelectorAll('[name="' + name + '"]').forEach(function(r) {
+        r.closest('.bcs-option').classList.remove('is-selected');
+      });
+      this.closest('.bcs-option').classList.add('is-selected');
+    });
+  });
+
+  /* ── Progress bar ── */
+  function setProgress(active) {
+    for (var i = 1; i <= 3; i++) {
+      var el = document.getElementById('step-' + i);
+      el.className = 'bcs-progress__step';
+      if (i < active)  el.classList.add('is-done');
+      if (i === active) el.classList.add('is-active');
+    }
+  }
+
+  /* ── Navigation helpers ── */
+  function showQuestion(id) {
+    document.querySelectorAll('.bcs-question').forEach(function(q) {
+      q.classList.remove('is-active');
+    });
+    document.getElementById('q' + id).classList.add('is-active');
+    setProgress(id);
+    scrollToQuiz();
+  }
+
+  function goBack(fromQ) {
+    showQuestion(fromQ - 1);
+  }
+
+  function scrollToQuiz() {
+    var top = document.getElementById('bcsQuiz').getBoundingClientRect().top + window.pageYOffset - 20;
+    window.scrollTo({ top: top, behavior: 'smooth' });
+  }
+
+  function getSelected(name) {
+    var el = document.querySelector('[name="' + name + '"]:checked');
+    return el ? el.value : null;
+  }
+
+  function showError(id) {
+    document.getElementById('err-' + id).style.display = 'block';
+  }
+
+  function hideError(id) {
+    document.getElementById('err-' + id).style.display = 'none';
+  }
+
+  function showResult(type) {
+    document.querySelectorAll('.bcs-question').forEach(function(q) {
+      q.classList.remove('is-active');
+    });
+    document.querySelectorAll('.bcs-result').forEach(function(r) {
+      r.classList.remove('is-active');
+    });
+    document.getElementById('bcsProgress').style.display = 'none';
+    document.getElementById('result-' + type).classList.add('is-active');
+    scrollToQuiz();
+  }
+
+  /* ── Question handlers ── */
+  function handleQ1() {
+    var val = getSelected('q1');
+    if (!val) { showError('q1'); return; }
+    hideError('q1');
+
+    if (val === 'working') {
+      showQuestion(2);
+    } else {
+      showResult(val); // student | associate | affiliate | retired
+    }
+  }
+
+  function handleQ2() {
+    var val = getSelected('q2');
+    if (!val) { showError('q2'); return; }
+    hideError('q2');
+
+    if (val === 'senior') {
+      showQuestion(3);
+    } else {
+      showResult('professional'); // early | experienced → Professional
+    }
+  }
+
+  function handleQ3() {
+    var val = getSelected('q3');
+    if (!val) { showError('q3'); return; }
+    hideError('q3');
+
+    if (val === 'professional') {
+      showResult('professional');
+    } else {
+      showResult('fellow'); // fellow-a | fellow-b → Fellowship
+    }
+  }
+
+  /* ── Restart ── */
+  function restartQuiz() {
+    document.querySelectorAll('.bcs-result').forEach(function(r) {
+      r.classList.remove('is-active');
+    });
+    document.querySelectorAll('.bcs-option').forEach(function(o) {
+      o.classList.remove('is-selected');
+    });
+    document.querySelectorAll('input[type="radio"]').forEach(function(r) {
+      r.checked = false;
+    });
+    document.querySelectorAll('.bcs-error').forEach(function(e) {
+      e.style.display = 'none';
+    });
+    document.getElementById('bcsProgress').style.display = 'flex';
+    showQuestion(1);
+  }
+</script>
+
+</body>
+</html>
